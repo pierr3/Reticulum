@@ -1,2 +1,4 @@
 ARRANGO_USER=<my user>
 ARRANGO_PASSWORD=<my password>
+DB_NAME='reticulum_db'
+CELLAR_CELEX_BASE_URL='http://publications.europa.eu/resource/celex/'
