@@ -46,7 +46,7 @@ def cases_check():
         q.enqueue(get_new_case, celex)
         return "{'status': 0, 'message': 'Case has been added to the pending list, it should take a couple hours for it to be indexed!'}"
     else:
-        if cases.find(celex)['indexed']:
+        if cases.get(celex)['indexed']:
             return "{'status': 2, 'message': 'Case is available!'}"
         else: 
             return "{'status': 1, 'message': 'Case is being processed, try again later!'}"

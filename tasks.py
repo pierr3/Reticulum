@@ -32,6 +32,7 @@ def get_new_case(celex, max_level=2, current_level=0):
     
     bs_content = bs(r.data, "lxml")
     case_name = bs_content.find('parties')
+
     if case_name is None:
         case_name = bs_content.find('title').getText()
     else:
@@ -41,6 +42,7 @@ def get_new_case(celex, max_level=2, current_level=0):
 
     work = bs_content.find('work')
     if work != None:
+        # Already inserted cases should have an ECLI
         ecli = work.find('ecli', recursive=False)
         if ecli != None:
             present_case['ecli'] = ecli.getText()
@@ -59,6 +61,8 @@ def get_new_case(celex, max_level=2, current_level=0):
         # The case is brand new and has not been indexed yet, we will flag it as indexed once we get all the relationships available
         present_case['indexed'] = False
         cases.insert(present_case)
+
+    present_case = cases.get(celex)
 
     # We reached the max level, we stop here
     if current_level > max_level or present_case['indexed']:
@@ -87,7 +91,7 @@ def get_new_case(celex, max_level=2, current_level=0):
             cc['indexed'] = False
             cases.insert(cc)
             # Add the task to the queue
-            q.enqueue(get_new_case, celex, max_level, current_level+1)
+            q.enqueue(get_new_case, cc['_key'], max_level, current_level+1)
 
         # We add the link between this current cases and all cited cases
         relationships.insert({'_from': 'cases/'+celex, '_to': 'cases/'+cc['_key']})
