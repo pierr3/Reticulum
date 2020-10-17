@@ -103,7 +103,12 @@ def cases_get():
     if not cases.has(celex):
         return get_new_case(celex)
 
-    result = graph.traverse(start_vertex = 'cases/'+celex, direction='any', strategy='depthfirst', min_depth=0, max_depth=10)
+    result = graph.traverse(
+    start_vertex='cases/'+celex,
+    direction='inbound',
+    strategy='bfs',
+    edge_uniqueness='global',
+    vertex_uniqueness='global', )   
 
     return result
 
