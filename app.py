@@ -5,7 +5,7 @@ from bs4 import BeautifulSoup as bs
 import urllib3
 from redis import Redis
 from rq import Queue
-from tasks import get_new_case, q
+from tasks import get_new_case, q, celex_to_case
 app = Flask(__name__)
 
 # Basic definitions
@@ -44,7 +44,7 @@ def cases_check():
         raise InvalidUsage('No CELEX number field provided.')
     if not cases.has(celex):
         q.enqueue(get_new_case, celex)
-        return "{'status': 0, 'message': 'Case has been added to the pending list, it should take a couple hours for it to be indexed!'}"
+        return "{'status': 0, 'message': 'Case has been added to the pending list, it could take a couple hours for it to be indexed!'}"
     else:
         if cases.get(celex)['indexed']:
             return "{'status': 2, 'message': 'Case is available!'}"

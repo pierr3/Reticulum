@@ -31,14 +31,8 @@ def get_new_case(celex, max_level=2, current_level=0):
         return "" # Need to handle exception here in the future
     
     bs_content = bs(r.data, "lxml")
-    case_name = bs_content.find('parties')
-
-    if case_name is None:
-        case_name = bs_content.find('title').getText()
-    else:
-        case_name = case_name.getText()
-
-    present_case = {'_key': celex, 'name': case_name, 'number': celex_to_case(celex)}
+    
+    present_case = {'_key': celex, 'number': celex_to_case(celex)}
 
     work = bs_content.find('work')
     if work != None:
@@ -53,6 +47,18 @@ def get_new_case(celex, max_level=2, current_level=0):
         if date != None:
             present_case['date'] = date.find('value').getText()
             present_case['year'] = int(date.find('year').getText())
+
+    expression = bs_content.find('expression', recursive=False)
+    if expression != None:
+        case_name = expression.find('parties', recursive=False)
+        if case_name is None:
+            case_name = expression.find('expression_title_short')
+            if case_name != None:
+                present_case['name'] = case_name.getText()
+            else:
+                present_case['name'] = 'Could not find name'
+        else:
+            present_case['name'] = case_name.getText()
 
     # We now add the new case or update it
     if cases.has(celex):
@@ -89,6 +95,7 @@ def get_new_case(celex, max_level=2, current_level=0):
         # Add the case so we can build the links then update the downstream metadata
         if not cases.has(cc['_key']):
             cc['indexed'] = False
+            cc['number'] = celex_to_case(cc['_key'])
             cases.insert(cc)
             # Add the task to the queue
             q.enqueue(get_new_case, cc['_key'], max_level, current_level+1)
