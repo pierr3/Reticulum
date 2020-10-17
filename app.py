@@ -30,7 +30,7 @@ relationships = db.collection('cases_connections')
 http = urllib3.PoolManager()
 
 # Get a new case
-def get_new_case(celex, max_level=4, current_level=0):
+def get_new_case(celex, max_level=2, current_level=0):
     r = http.request('GET', CELLAR_CELEX_BASE_URL + celex + '?language=ENG',  
                     headers={ 'Accept': 'application/xml;notice=branch', 'Accept-Language': 'eng' })
     if r.status != 200:
@@ -41,7 +41,7 @@ def get_new_case(celex, max_level=4, current_level=0):
     if case_name is None:
         case_name = bs_content.find('title').getText()
     else:
-        case_name.getText()
+        case_name = case_name.getText()
 
     case_ecli = ''
     work = bs_content.find('work')
@@ -54,7 +54,7 @@ def get_new_case(celex, max_level=4, current_level=0):
 
 
     # We now add the new case
-    cases.insert({'_key': celex, 'ecli': case_ecli})
+    cases.insert({'_key': celex, 'ecli': case_ecli, 'name': case_name})
 
     # We reached the max level, we stop here
     if current_level > max_level:
@@ -103,16 +103,9 @@ def cases_get():
     if not cases.has(celex):
         return get_new_case(celex)
 
-    c = cases.get(celex)
+    result = graph.traverse(start_vertex = 'cases/'+celex, direction='any', strategy='depthfirst', min_depth=0, max_depth=10)
 
-    #result = graph.traverse(
-    #    start_vertex = celex,
-    #    direction='outbound',
-    #    strategy='breadthfirst'
-    #)
-
-    #return result
-    return ""
+    return result
 
 
 
