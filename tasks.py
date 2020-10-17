@@ -14,6 +14,16 @@ relationships = db.collection('cases_connections')
 http = urllib3.PoolManager()
 q = Queue(connection=Redis())
 
+def celex_to_case(celex):
+    if 'CJ' in celex:
+        number = 'C-'
+    if 'TJ' in celex:
+        number = 'T-'
+    if 'FJ' in celex:
+        number = 'F-'
+    number = number + celex[7:].lstrip('0') + '/' + celex[3:5] 
+    return number
+
 def get_new_case(celex, max_level=2, current_level=0):
     r = http.request('GET', CELLAR_CELEX_BASE_URL + celex + '?language=ENG',  
                     headers={ 'Accept': 'application/xml;notice=branch', 'Accept-Language': 'eng' })
@@ -27,7 +37,7 @@ def get_new_case(celex, max_level=2, current_level=0):
     else:
         case_name = case_name.getText()
 
-    present_case = {'_key': celex, 'name': case_name}
+    present_case = {'_key': celex, 'name': case_name, 'number': celex_to_case(celex)}
 
     work = bs_content.find('work')
     if work != None:

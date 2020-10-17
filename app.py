@@ -3,6 +3,9 @@ from config import *
 from arango import ArangoClient
 from bs4 import BeautifulSoup as bs
 import urllib3
+from redis import Redis
+from rq import Queue
+from tasks import get_new_case
 app = Flask(__name__)
 
 # Basic definitions
@@ -27,33 +30,43 @@ db = client.db(DB_NAME, username=ARRANGO_USER, password=ARRANGO_PASSWORD)
 cases = db.collection('cases')
 graph = db.graph('casesGraph')
 relationships = db.collection('cases_connections')
-
+q = Queue(connection=Redis())
 
 # Get a new case
-
-
 @app.route('/')
 def hello():
     return render_template('index.html')
 
-@app.route('/api/v1/cases/check')
+@app.route('/api/v1/cases/request')
 def cases_check():
-    return "Not implemented yet."
-
-@app.route('/api/v1/cases/get')
-def cases_get():
-    if 'celex' in request.args:
+    if 'celex' in request.args and '':
         celex = escape(request.args['celex'])
     else:
         raise InvalidUsage('No CELEX number field provided.')
+    if not cases.has(celex):
+        q.enqueue(get_new_case, )
+        return "{'status': 0, 'message': 'Case has been added to the pending list, it should take a couple hours for it to be indexed!'}"
+    else:
+        if cases.find(celex)['indexed']:
+            return "{'status': 2, 'message': 'Case is available!'}"
+        else: 
+            return "{'status': 1, 'message': 'Case is being processed, try again later!'}"
+
+@app.route('/api/v1/cases/get')
+def cases_get():
+    if 'celex' in request.args and '':
+        celex = escape(request.args['celex'])
+        direction = int(request.args['direction'])
+    else:
+        raise InvalidUsage('No CELEX number and direction field provided.')
 
     # First we check if we have that case in database
     if not cases.has(celex):
-        return get_new_case(celex)
+        return "Case is not in database"
 
     result = graph.traverse(
     start_vertex='cases/'+celex,
-    direction='inbound',
+    direction= 'outbound' if direction else 'inbound',
     strategy='bfs',
     edge_uniqueness='global',
     vertex_uniqueness='global', )   
