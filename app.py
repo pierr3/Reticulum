@@ -27,62 +27,10 @@ db = client.db(DB_NAME, username=ARRANGO_USER, password=ARRANGO_PASSWORD)
 cases = db.collection('cases')
 graph = db.graph('casesGraph')
 relationships = db.collection('cases_connections')
-http = urllib3.PoolManager()
+
 
 # Get a new case
-def get_new_case(celex, max_level=2, current_level=0):
-    r = http.request('GET', CELLAR_CELEX_BASE_URL + celex + '?language=ENG',  
-                    headers={ 'Accept': 'application/xml;notice=branch', 'Accept-Language': 'eng' })
-    if r.status != 200:
-        return "" # Need to handle exception here in the future
-    
-    bs_content = bs(r.data, "lxml")
-    case_name = bs_content.find('parties')
-    if case_name is None:
-        case_name = bs_content.find('title').getText()
-    else:
-        case_name = case_name.getText()
 
-    case_ecli = ''
-    work = bs_content.find('work')
-    if work != None:
-        if 'ECLI:EU' in work.getText():
-            for ids in work.find_all('identifier'):
-                if 'ecli' in ids.find_next('type').getText():
-                    case_ecli = ids.getText()
-                    break
-
-
-    # We now add the new case
-    cases.insert({'_key': celex, 'ecli': case_ecli, 'name': case_name})
-
-    # We reached the max level, we stop here
-    if current_level > max_level:
-        return
-
-    # We now move to linked cases
-
-    cited_cases = []
-
-    all_cases = bs_content.find_all('work_cites_work')
-    for case in all_cases:
-        if 'ECLI:EU' in case.getText():
-            linked_case = {'_key': '', 'ecli': ''}
-            for ids in case.find_all('identifier'):
-                if 'celex' in ids.find_next('type').getText():
-                    linked_case['_key'] = ids.getText()
-                #if 'ecli' in ids.find_next('type').getText():
-                #    linked_case['ecli'] = ids.getText()
-            cited_cases.append(linked_case)
-    
-    # We fetch all the linked cases
-    for cc in cited_cases:
-        if not cases.has(cc['_key']):
-            get_new_case(cc['_key'], max_level, current_level+1)
-        # We add the link between this current cases and all cited cases
-        relationships.insert({'_from': 'cases/'+celex, '_to': 'cases/'+cc['_key']})
-    
-    return str(cited_cases)
 
 @app.route('/')
 def hello():
