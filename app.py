@@ -5,7 +5,7 @@ from bs4 import BeautifulSoup as bs
 import urllib3
 from redis import Redis
 from rq import Queue
-from tasks import get_new_case
+from tasks import get_new_case, q
 app = Flask(__name__)
 
 # Basic definitions
@@ -30,7 +30,6 @@ db = client.db(DB_NAME, username=ARRANGO_USER, password=ARRANGO_PASSWORD)
 cases = db.collection('cases')
 graph = db.graph('casesGraph')
 relationships = db.collection('cases_connections')
-q = Queue(connection=Redis())
 
 # Get a new case
 @app.route('/')
@@ -39,12 +38,12 @@ def hello():
 
 @app.route('/api/v1/cases/request')
 def cases_check():
-    if 'celex' in request.args and '':
+    if 'celex' in request.args:
         celex = escape(request.args['celex'])
     else:
         raise InvalidUsage('No CELEX number field provided.')
     if not cases.has(celex):
-        q.enqueue(get_new_case, )
+        q.enqueue(get_new_case, celex)
         return "{'status': 0, 'message': 'Case has been added to the pending list, it should take a couple hours for it to be indexed!'}"
     else:
         if cases.find(celex)['indexed']:
@@ -54,7 +53,7 @@ def cases_check():
 
 @app.route('/api/v1/cases/get')
 def cases_get():
-    if 'celex' in request.args and '':
+    if 'celex' in request.args and 'direction' in request.args:
         celex = escape(request.args['celex'])
         direction = int(request.args['direction'])
     else:
