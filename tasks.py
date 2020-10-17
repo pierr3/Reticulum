@@ -27,16 +27,20 @@ def get_new_case(celex, max_level=2, current_level=0):
     else:
         case_name = case_name.getText()
 
-    case_ecli = ''
+    present_case = {'_key': celex, 'name': case_name}
+
     work = bs_content.find('work')
     if work != None:
-        if 'ECLI:EU' in work.getText():
-            for ids in work.find_all('identifier'):
-                if 'ecli' in ids.find_next('type').getText():
-                    case_ecli = ids.getText()
-                    break
-        
-    present_case = {'_key': celex, 'ecli': case_ecli, 'name': case_name}
+        ecli = work.find('ecli', recursive=False)
+        if ecli != None:
+            present_case['ecli'] = ecli.getText()
+        else:
+            present_case['ecli'] = 'No ECLI found'
+
+        date = work.find('date', recursive=False)
+        if date != None:
+            present_case['date'] = date.find('value').getText()
+            present_case['year'] = int(date.find('year').getText())
 
     # We now add the new case or update it
     if cases.has(celex):
