@@ -48,9 +48,9 @@ def get_new_case(celex, max_level=2, current_level=0):
             present_case['date'] = date.find('value').getText()
             present_case['year'] = int(date.find('year').getText())
 
-    expression = bs_content.find('expression', recursive=False)
+    expression = bs_content.find('expression')
     if expression != None:
-        case_name = expression.find('parties', recursive=False)
+        case_name = expression.find('parties')
         if case_name is None:
             case_name = expression.find('expression_title_short')
             if case_name != None:
