@@ -24,7 +24,7 @@ def celex_to_case(celex):
     number = number + celex[7:].lstrip('0') + '/' + celex[3:5] 
     return number
 
-def get_new_case(celex, max_level=4, current_level=0):
+def get_new_case(celex, max_level=3, current_level=0):
     r = http.request('GET', CELLAR_CELEX_BASE_URL + celex + '?language=ENG',  
                     headers={ 'Accept': 'application/xml;notice=branch', 'Accept-Language': 'eng' })
     if r.status != 200:
