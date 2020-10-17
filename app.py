@@ -49,7 +49,8 @@ def cases_check():
         if cases.get(celex)['indexed']:
             return "{'status': 2, 'message': 'Case is available!'}"
         else: 
-            return "{'status': 1, 'message': 'Case is being processed, try again later!'}"
+            q.enqueue(get_new_case, celex)
+            return "{'status': 1, 'message': 'Case is being processed, it could take a couple hours for it to be indexed!'}"
 
 @app.route('/api/v1/cases/get')
 def cases_get():

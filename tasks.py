@@ -24,7 +24,7 @@ def celex_to_case(celex):
     number = number + celex[7:].lstrip('0') + '/' + celex[3:5] 
     return number
 
-def get_new_case(celex, max_level=2, current_level=0):
+def get_new_case(celex, max_level=4, current_level=0):
     r = http.request('GET', CELLAR_CELEX_BASE_URL + celex + '?language=ENG',  
                     headers={ 'Accept': 'application/xml;notice=branch', 'Accept-Language': 'eng' })
     if r.status != 200:
@@ -70,7 +70,7 @@ def get_new_case(celex, max_level=2, current_level=0):
 
     present_case = cases.get(celex)
 
-    # We reached the max level, we stop here
+    # We reached the max level, we stop here, or we already indexed the case
     if current_level > max_level or present_case['indexed']:
         return
 
@@ -99,6 +99,12 @@ def get_new_case(celex, max_level=2, current_level=0):
             cases.insert(cc)
             # Add the task to the queue
             q.enqueue(get_new_case, cc['_key'], max_level, current_level+1)
+        elif not cases.get(cc['_key'])['indexed']:
+            cc['number'] = celex_to_case(cc['_key'])
+            cases.update(cc)
+            # Add the task to the queue
+            q.enqueue(get_new_case, cc['_key'], max_level, current_level+1)
+
 
         # We add the link between this current cases and all cited cases
         relationships.insert({'_from': 'cases/'+celex, '_to': 'cases/'+cc['_key']})
