@@ -66,10 +66,7 @@ def cases_get():
 
     result = graph.traverse(
     start_vertex='cases/'+celex,
-    direction= 'outbound' if direction else 'inbound',
-    strategy='bfs',
-    edge_uniqueness='global',
-    vertex_uniqueness='global', )   
+    direction= 'outbound' if direction else 'inbound', min_depth=1, max_depth=2)   
 
     return result
 
